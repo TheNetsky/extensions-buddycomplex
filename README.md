@@ -1,2 +1,2 @@
-# extensions-buddycomplex
-Contains sources/sites with the MangaBuddy CMS, I just named it Buddy Complex. Not sure what the real name is. lol
+# BuddyComplex Extensions
+[Click me](https://thenetsky.github.io/extensions-buddycomplex/) to go to the index page!
