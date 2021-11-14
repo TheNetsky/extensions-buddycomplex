@@ -1550,13 +1550,17 @@ exports.TooniFabInfo = {
     author: 'Netsky',
     authorWebsite: 'http://github.com/TheNetsky',
     icon: 'icon.png',
-    contentRating: paperback_extensions_common_1.ContentRating.MATURE,
+    contentRating: paperback_extensions_common_1.ContentRating.ADULT,
     websiteBaseURL: TOONIFAB_DOMAIN,
     sourceTags: [
         {
             text: 'Notifications',
             type: paperback_extensions_common_1.TagType.GREEN
         },
+        {
+            text: '18+',
+            type: paperback_extensions_common_1.TagType.YELLOW
+        }
     ]
 };
 class TooniFab extends BuddyComplex_1.BuddyComplex {
