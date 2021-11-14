@@ -20,13 +20,17 @@ export const TooniFabInfo: SourceInfo = {
     author: 'Netsky',
     authorWebsite: 'http://github.com/TheNetsky',
     icon: 'icon.png',
-    contentRating: ContentRating.MATURE,
+    contentRating: ContentRating.ADULT,
     websiteBaseURL: TOONIFAB_DOMAIN,
     sourceTags: [
         {
             text: 'Notifications',
             type: TagType.GREEN
         },
+        {
+            text: '18+',
+            type: TagType.YELLOW
+        }
     ]
 }
 
