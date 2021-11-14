@@ -18,6 +18,7 @@ import {
     UpdatedManga
 } from './BuddyComplexParser'
 
+import { URLBuilder } from './BuddyComplexHelper'
 
 // Set the version for the base, changing this version will change the versions of all sources
 const BASE_VERSION = '1.0.0'
@@ -117,30 +118,26 @@ export abstract class BuddyComplex extends Source {
 
     override async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
         const page = metadata?.page ?? 1
-        let request
 
-        if (query.title) {
-            request = createRequestObject({
-                url: `${this.baseUrl}/page/${page}/?s=`,
-                method: 'GET',
-                headers: this.constructHeaders({}),
-                param: encodeURI(query.title)
-            })
-        } else {
-            request = createRequestObject({
-                url: `${this.baseUrl}/`,
-                method: 'GET',
-                headers: this.constructHeaders({}),
-                param: `genres/${query?.includedTags?.map((x: any) => x.id)[0]}/page/${page}`
-            })
-        }
+        const url = new URLBuilder(this.baseUrl)
+            .addPathComponent('search')
+            .addQueryParameter('page', page)
+            .addQueryParameter('q', encodeURI(query?.title || ''))
+            .addQueryParameter('genre', query.includedTags?.map((x: any) => x.id).join('%5B%5D'))
+            .buildUrl()
+
+        const request = createRequestObject({
+            url: url,
+            method: 'GET',
+            headers: this.constructHeaders({}),
+        })
 
         const response = await this.requestManager.schedule(request, 1)
         this.CloudFlareError(response.status)
         const $ = this.cheerio.load(response.data)
-        const manga = this.parser.parseSearchResults($, this)
-        //metadata = !this.parser.isLastPage($) ? { page: page + 1 } : undefined
-        metadata =  undefined
+        const manga = this.parser.parseViewMore($, this)
+        metadata = !this.parser.isLastPage($) ? { page: page + 1 } : undefined
+
         return createPagedResults({
             results: manga,
             metadata
@@ -150,7 +147,7 @@ export abstract class BuddyComplex extends Source {
     override async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]): Promise<void> {
         let updatedManga: UpdatedManga = {
             ids: [],
-        };
+        }
 
         const request = createRequestObject({
             url: `${this.baseUrl}`,
@@ -165,7 +162,7 @@ export abstract class BuddyComplex extends Source {
         if (updatedManga.ids.length > 0) {
             mangaUpdatesFoundCallback(createMangaUpdates({
                 ids: updatedManga.ids
-            }));
+            }))
         }
     }
 
@@ -195,19 +192,19 @@ export abstract class BuddyComplex extends Source {
         let param = ''
         switch (homepageSectionId) {
             case 'hot_updates':
-                param = `popular`
+                param = 'popular'
                 break
             case 'latest_update':
-                param = `latest`
+                param = 'latest'
                 break
             case 'top_today':
-                param = `top/day`
+                param = 'top/day'
                 break
             case 'top_weekly':
-                param = `top/week`
+                param = 'top/week'
                 break
             case 'top_monthly':
-                param = `top/month`
+                param = 'top/month'
                 break
             default:
                 throw new Error(`Invalid homeSectionId | ${homepageSectionId}`)
