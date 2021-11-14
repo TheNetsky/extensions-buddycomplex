@@ -16,4 +16,4 @@ ___
 | Repo name | Description |          Link |
 | ---        |    ----   |         --- |
 | Netsky's Extensions   | Some other sources of mine!        |  [Click me!](https://thenetsky.github.io/netskys-extensions/)    |
-| Extensions MangaStream   | Some other sources of mine!        |  [Click me!](https://thenetsky.github.io/extensions-mangastream/)    |
+| Extensions MangaStream   | My generic class MangaStream repo with more sources!        |  [Click me!](https://thenetsky.github.io/extensions-mangastream/)    |
