@@ -1538,20 +1538,20 @@ exports.BuddyComplexParser = BuddyComplexParser;
 },{"entities":8,"paperback-extensions-common":14}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MangaBuddy = exports.MangaBuddyInfo = void 0;
+exports.MangaSpin = exports.MangaSpinInfo = void 0;
 /* eslint-disable linebreak-style */
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplex_1 = require("../BuddyComplex");
-const MANGABUDDY_DOMAIN = 'https://mangabuddy.com';
-exports.MangaBuddyInfo = {
+const MANGASPIN_DOMAIN = 'https://mangaspin.com';
+exports.MangaSpinInfo = {
     version: BuddyComplex_1.getExportVersion('0.0.0'),
-    name: 'MangaBuddy',
-    description: 'Extension that pulls manga from MangaBuddy',
+    name: 'MangaSpin',
+    description: 'Extension that pulls manga from MangaSpin',
     author: 'Netsky',
     authorWebsite: 'http://github.com/TheNetsky',
     icon: 'icon.png',
     contentRating: paperback_extensions_common_1.ContentRating.MATURE,
-    websiteBaseURL: MANGABUDDY_DOMAIN,
+    websiteBaseURL: MANGASPIN_DOMAIN,
     sourceTags: [
         {
             text: 'Notifications',
@@ -1559,14 +1559,14 @@ exports.MangaBuddyInfo = {
         },
     ]
 };
-class MangaBuddy extends BuddyComplex_1.BuddyComplex {
+class MangaSpin extends BuddyComplex_1.BuddyComplex {
     constructor() {
         super(...arguments);
-        this.baseUrl = MANGABUDDY_DOMAIN;
+        this.baseUrl = MANGASPIN_DOMAIN;
         this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
     }
 }
-exports.MangaBuddy = MangaBuddy;
+exports.MangaSpin = MangaSpin;
 
 },{"../BuddyComplex":57,"paperback-extensions-common":14}]},{},[60])(60)
 });

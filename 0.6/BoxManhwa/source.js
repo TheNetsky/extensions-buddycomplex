@@ -927,6 +927,39 @@ __exportStar(require("./RawData"), exports);
 
 },{"./Chapter":15,"./ChapterDetails":16,"./Constants":17,"./DynamicUI":33,"./HomeSection":34,"./Languages":35,"./Manga":36,"./MangaTile":37,"./MangaUpdate":38,"./PagedResults":39,"./RawData":40,"./RequestHeaders":41,"./RequestInterceptor":42,"./RequestManager":43,"./RequestObject":44,"./ResponseObject":45,"./SearchField":46,"./SearchRequest":47,"./SourceInfo":48,"./SourceManga":49,"./SourceStateManager":50,"./SourceTag":51,"./TagSection":52,"./TrackedManga":53,"./TrackedMangaChapterReadAction":54,"./TrackerActionQueue":55}],57:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoxManhwa = exports.BoxManhwaInfo = void 0;
+/* eslint-disable linebreak-style */
+const paperback_extensions_common_1 = require("paperback-extensions-common");
+const BuddyComplex_1 = require("../BuddyComplex");
+const BOXMANHWA_DOMAIN = 'https://boxmanhwa.com';
+exports.BoxManhwaInfo = {
+    version: BuddyComplex_1.getExportVersion('0.0.0'),
+    name: 'BoxManhwa',
+    description: 'Extension that pulls manga from BoxManhwa',
+    author: 'Netsky',
+    authorWebsite: 'http://github.com/TheNetsky',
+    icon: 'icon.png',
+    contentRating: paperback_extensions_common_1.ContentRating.MATURE,
+    websiteBaseURL: BOXMANHWA_DOMAIN,
+    sourceTags: [
+        {
+            text: 'Notifications',
+            type: paperback_extensions_common_1.TagType.GREEN
+        },
+    ]
+};
+class BoxManhwa extends BuddyComplex_1.BuddyComplex {
+    constructor() {
+        super(...arguments);
+        this.baseUrl = BOXMANHWA_DOMAIN;
+        this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
+    }
+}
+exports.BoxManhwa = BoxManhwa;
+
+},{"../BuddyComplex":58,"paperback-extensions-common":14}],58:[function(require,module,exports){
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -1149,7 +1182,7 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
 }
 exports.BuddyComplex = BuddyComplex;
 
-},{"./BuddyComplexHelper":58,"./BuddyComplexParser":59,"paperback-extensions-common":14}],58:[function(require,module,exports){
+},{"./BuddyComplexHelper":59,"./BuddyComplexParser":60,"paperback-extensions-common":14}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.URLBuilder = void 0;
@@ -1194,7 +1227,7 @@ class URLBuilder {
 }
 exports.URLBuilder = URLBuilder;
 
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BuddyComplexParser = void 0;
@@ -1535,38 +1568,5 @@ class BuddyComplexParser {
 }
 exports.BuddyComplexParser = BuddyComplexParser;
 
-},{"entities":8,"paperback-extensions-common":14}],60:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MangaBuddy = exports.MangaBuddyInfo = void 0;
-/* eslint-disable linebreak-style */
-const paperback_extensions_common_1 = require("paperback-extensions-common");
-const BuddyComplex_1 = require("../BuddyComplex");
-const MANGABUDDY_DOMAIN = 'https://mangabuddy.com';
-exports.MangaBuddyInfo = {
-    version: BuddyComplex_1.getExportVersion('0.0.0'),
-    name: 'MangaBuddy',
-    description: 'Extension that pulls manga from MangaBuddy',
-    author: 'Netsky',
-    authorWebsite: 'http://github.com/TheNetsky',
-    icon: 'icon.png',
-    contentRating: paperback_extensions_common_1.ContentRating.MATURE,
-    websiteBaseURL: MANGABUDDY_DOMAIN,
-    sourceTags: [
-        {
-            text: 'Notifications',
-            type: paperback_extensions_common_1.TagType.GREEN
-        },
-    ]
-};
-class MangaBuddy extends BuddyComplex_1.BuddyComplex {
-    constructor() {
-        super(...arguments);
-        this.baseUrl = MANGABUDDY_DOMAIN;
-        this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
-    }
-}
-exports.MangaBuddy = MangaBuddy;
-
-},{"../BuddyComplex":57,"paperback-extensions-common":14}]},{},[60])(60)
+},{"entities":8,"paperback-extensions-common":14}]},{},[57])(57)
 });
