@@ -1550,7 +1550,6 @@ class BuddyComplexParser {
         else {
             image = null;
         }
-        console.log(image);
         const wpRegex = image === null || image === void 0 ? void 0 : image.match(/(https:\/\/i\d.wp.com\/)/);
         if (wpRegex)
             image = image.replace(wpRegex[0], '');
