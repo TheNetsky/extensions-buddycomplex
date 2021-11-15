@@ -1536,20 +1536,20 @@ exports.BuddyComplexParser = BuddyComplexParser;
 },{"entities":8,"paperback-extensions-common":14}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MangaMax = exports.MangaMaxInfo = void 0;
+exports.MangaFab = exports.MangaFabInfo = void 0;
 /* eslint-disable linebreak-style */
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplex_1 = require("../BuddyComplex");
-const MANGAMAX_DOMAIN = 'https://mangamax.net';
-exports.MangaMaxInfo = {
+const MANGAFAB_DOMAIN = 'https://mangafab.com';
+exports.MangaFabInfo = {
     version: BuddyComplex_1.getExportVersion('0.0.0'),
-    name: 'MangaMax',
-    description: 'Extension that pulls manga from MangaMax',
+    name: 'MangaFab',
+    description: 'Extension that pulls manga from MangaFab',
     author: 'Netsky',
     authorWebsite: 'http://github.com/TheNetsky',
     icon: 'icon.png',
     contentRating: paperback_extensions_common_1.ContentRating.MATURE,
-    websiteBaseURL: MANGAMAX_DOMAIN,
+    websiteBaseURL: MANGAFAB_DOMAIN,
     sourceTags: [
         {
             text: 'Notifications',
@@ -1557,14 +1557,14 @@ exports.MangaMaxInfo = {
         },
     ]
 };
-class MangaMax extends BuddyComplex_1.BuddyComplex {
+class MangaFab extends BuddyComplex_1.BuddyComplex {
     constructor() {
         super(...arguments);
-        this.baseUrl = MANGAMAX_DOMAIN;
+        this.baseUrl = MANGAFAB_DOMAIN;
         this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
     }
 }
-exports.MangaMax = MangaMax;
+exports.MangaFab = MangaFab;
 
 },{"../BuddyComplex":57,"paperback-extensions-common":14}]},{},[60])(60)
 });

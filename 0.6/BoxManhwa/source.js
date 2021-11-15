@@ -976,7 +976,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplexParser_1 = require("./BuddyComplexParser");
 const BuddyComplexHelper_1 = require("./BuddyComplexHelper");
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.0.0';
+const BASE_VERSION = '1.0.1';
 const getExportVersion = (EXTENSION_VERSION) => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.');
 };
@@ -997,6 +997,19 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
         this.requestManager = createRequestManager({
             requestsPerSecond: 3,
             requestTimeout: 15000,
+            interceptor: {
+                interceptRequest: (request) => __awaiter(this, void 0, void 0, function* () {
+                    var _a;
+                    request.headers = Object.assign(Object.assign({}, ((_a = request.headers) !== null && _a !== void 0 ? _a : {})), {
+                        'user-agent': this.userAgentRandomizer,
+                        'referer': this.baseUrl
+                    });
+                    return request;
+                }),
+                interceptResponse: (response) => __awaiter(this, void 0, void 0, function* () {
+                    return response;
+                })
+            }
         });
         this.parser = new BuddyComplexParser_1.BuddyComplexParser();
     }
@@ -1008,7 +1021,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}/${mangaId}/`,
                 method: 'GET',
-                headers: this.constructHeaders({})
             });
             const response = yield this.requestManager.schedule(request, 1);
             this.CloudFlareError(response.status);
@@ -1021,7 +1033,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}/${mangaId}/`,
                 method: 'GET',
-                headers: this.constructHeaders({})
             });
             const response = yield this.requestManager.schedule(request, 1);
             this.CloudFlareError(response.status);
@@ -1034,7 +1045,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}/${mangaId}/${chapterId}/`,
                 method: 'GET',
-                headers: this.constructHeaders({}),
             });
             const response = yield this.requestManager.schedule(request, 1);
             this.CloudFlareError(response.status);
@@ -1047,7 +1057,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}/`,
                 method: 'GET',
-                headers: this.constructHeaders({}),
             });
             const response = yield this.requestManager.schedule(request, 1);
             this.CloudFlareError(response.status);
@@ -1068,7 +1077,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: url,
                 method: 'GET',
-                headers: this.constructHeaders({}),
             });
             const response = yield this.requestManager.schedule(request, 1);
             this.CloudFlareError(response.status);
@@ -1089,7 +1097,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}`,
                 method: 'GET',
-                headers: this.constructHeaders({}),
             });
             const response = yield this.requestManager.schedule(request, 1);
             const $ = this.cheerio.load(response.data);
@@ -1112,7 +1119,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}/`,
                 method: 'GET',
-                headers: this.constructHeaders({})
             });
             const response = yield this.requestManager.schedule(request, 1);
             this.CloudFlareError(response.status);
@@ -1147,7 +1153,6 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${this.baseUrl}/`,
                 method: 'GET',
-                headers: this.constructHeaders({}),
                 param: `${param}?page=${page}`,
             });
             const response = yield this.requestManager.schedule(request, 1);
@@ -1164,15 +1169,7 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
         return createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
-            headers: this.constructHeaders({})
         });
-    }
-    constructHeaders(headers, refererPath) {
-        if (this.userAgentRandomizer !== '') {
-            headers['user-agent'] = this.userAgentRandomizer;
-        }
-        headers['referer'] = `${this.baseUrl}${refererPath !== null && refererPath !== void 0 ? refererPath : ''}/`;
-        return headers;
     }
     CloudFlareError(status) {
         if (status == 503) {
@@ -1458,7 +1455,7 @@ class BuddyComplexParser {
                 const latestUpdate = [];
                 for (const manga of $('div.book-item.latest-item', 'div.section.box.grid-items').toArray()) {
                     const id = (_d = (_c = $('a', manga).attr('href')) === null || _c === void 0 ? void 0 : _c.replace('/', '')) !== null && _d !== void 0 ? _d : '';
-                    const title = $('div.title > h3', manga).text().trim();
+                    const title = $('div.title > h3 > a', manga).text().trim();
                     const image = this.getImageSrc($('img', manga));
                     const subtitle = $('a', $('div.chap-item', manga).first()).text().trim();
                     if (!id || !title)
@@ -1466,7 +1463,7 @@ class BuddyComplexParser {
                     latestUpdate.push(createMangaTile({
                         id: id,
                         image: image ? image : source.fallbackImage,
-                        title: createIconText({ text: this.decodeHTMLEntity('ww') }),
+                        title: createIconText({ text: this.decodeHTMLEntity(title) }),
                         subtitleText: createIconText({ text: subtitle }),
                     }));
                 }
@@ -1553,7 +1550,8 @@ class BuddyComplexParser {
         else {
             image = null;
         }
-        const wpRegex = image === null || image === void 0 ? void 0 : image.match(/(https:\/\/i\d.wp.com)/);
+        console.log(image);
+        const wpRegex = image === null || image === void 0 ? void 0 : image.match(/(https:\/\/i\d.wp.com\/)/);
         if (wpRegex)
             image = image.replace(wpRegex[0], '');
         if (image === null || image === void 0 ? void 0 : image.startsWith('//'))
