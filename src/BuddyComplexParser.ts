@@ -133,7 +133,7 @@ export class BuddyComplexParser {
 
         for (const manga of $('div.book-item.latest-item', 'div.section.box.grid-items').toArray()) {
             const id = $('a', manga).attr('href')?.replace('/', '') ?? ''
-            const mangaDate = this.parseDate($('span' ,$('div.updated-date', manga).first()).text().trim())
+            const mangaDate = this.parseDate($('span', $('div.updated-date', manga).first()).text().trim())
 
             //Check if manga time is older than the time porvided, is this manga has an update. Return this.
             if (!id) continue
@@ -177,7 +177,7 @@ export class BuddyComplexParser {
 
                 for (const manga of $('div.book-item.latest-item', 'div.section.box.grid-items').toArray()) {
                     const id = $('a', manga).attr('href')?.replace('/', '') ?? ''
-                    const title = $('div.title > h3', manga).text().trim()
+                    const title = $('div.title > h3 > a', manga).text().trim()
                     const image = this.getImageSrc($('img', manga))
                     const subtitle = $('a', $('div.chap-item', manga).first()).text().trim()
 
@@ -185,7 +185,7 @@ export class BuddyComplexParser {
                     latestUpdate.push(createMangaTile({
                         id: id,
                         image: image ? image : source.fallbackImage,
-                        title: createIconText({ text: this.decodeHTMLEntity('ww') }),
+                        title: createIconText({ text: this.decodeHTMLEntity(title) }),
                         subtitleText: createIconText({ text: subtitle }),
                     }))
                 }
@@ -309,8 +309,8 @@ export class BuddyComplexParser {
         } else {
             image = null
         }
-
-        const wpRegex = image?.match(/(https:\/\/i\d.wp.com)/)
+        console.log(image)
+        const wpRegex = image?.match(/(https:\/\/i\d.wp.com\/)/)
         if (wpRegex) image = image.replace(wpRegex[0], '')
 
         if (image?.startsWith('//')) image = `https:${image}`

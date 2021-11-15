@@ -10,6 +10,8 @@ import {
     SearchRequest,
     Source,
     TagSection,
+    Request,
+    Response
 
 } from 'paperback-extensions-common'
 
@@ -21,14 +23,14 @@ import {
 import { URLBuilder } from './BuddyComplexHelper'
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.0.0'
+const BASE_VERSION = '1.0.1'
 export const getExportVersion = (EXTENSION_VERSION: string): string => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.')
 }
 
 export abstract class BuddyComplex extends Source {
     /**
-     * The URL of the website. Eg. https://mangadark.com without a trailing slash
+     * The URL of the website. Eg. https://mangafab.com without a trailing slash
      */
     abstract baseUrl: string
 
@@ -53,6 +55,24 @@ export abstract class BuddyComplex extends Source {
     requestManager = createRequestManager({
         requestsPerSecond: 3,
         requestTimeout: 15000,
+        interceptor: {
+            interceptRequest: async (request: Request): Promise<Request> => {
+
+                request.headers = {
+                    ...(request.headers ?? {}),
+                    ...{
+                        'user-agent': this.userAgentRandomizer,
+                        'referer': this.baseUrl
+                    }
+                }
+
+                return request
+            },
+
+            interceptResponse: async (response: Response): Promise<Response> => {
+                return response
+            }
+        }
     });
 
     parser = new BuddyComplexParser();
@@ -66,7 +86,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}/${mangaId}/`,
             method: 'GET',
-            headers: this.constructHeaders({})
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -80,7 +99,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}/${mangaId}/`,
             method: 'GET',
-            headers: this.constructHeaders({})
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -94,7 +112,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}/${mangaId}/${chapterId}/`,
             method: 'GET',
-            headers: this.constructHeaders({}),
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -107,7 +124,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
-            headers: this.constructHeaders({}),
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -129,7 +145,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: url,
             method: 'GET',
-            headers: this.constructHeaders({}),
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -152,7 +167,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}`,
             method: 'GET',
-            headers: this.constructHeaders({}),
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -178,7 +192,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
-            headers: this.constructHeaders({})
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -213,7 +226,6 @@ export abstract class BuddyComplex extends Source {
         const request = createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
-            headers: this.constructHeaders({}),
             param: `${param}?page=${page}`,
         })
 
@@ -233,16 +245,7 @@ export abstract class BuddyComplex extends Source {
         return createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
-            headers: this.constructHeaders({})
         })
-    }
-
-    constructHeaders(headers: any, refererPath?: string): any {
-        if (this.userAgentRandomizer !== '') {
-            headers['user-agent'] = this.userAgentRandomizer
-        }
-        headers['referer'] = `${this.baseUrl}${refererPath ?? ''}/`
-        return headers
     }
 
     CloudFlareError(status: any) {
