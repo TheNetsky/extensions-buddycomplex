@@ -98,11 +98,26 @@ export class BuddyComplexParser {
         return chapters
     }
 
-    parseChapterDetails($: CheerioSelector, mangaId: string, chapterId: string): ChapterDetails {
+    parseChapterDetails($: CheerioStatic, mangaId: string, chapterId: string): ChapterDetails {
         const pages: string[] = []
 
-        for (const image of $('div.chapter-image', 'div#chapter-images.container').toArray()) {
-            pages.push(this.getImageSrc($('img', image)))
+        const imageRegex = $.html().match(/chapImages\s=\s(.+)(?=')/)
+        let imageScript = null
+        if (imageRegex && imageRegex[1]) imageScript = imageRegex[1]
+        
+        //If script has a match, use the script
+        if (imageScript) {
+            imageScript = imageScript.replace(/'/g, '')
+
+            const images = imageScript.split(',')
+            for (const image of images) {
+                pages.push(`https://static.youmadcdn.xyz/manga/${image}`)
+            }
+        } else {
+            //Else parse the manual way
+            for (const image of $('div.chapter-image', 'div#chapter-images.container').toArray()) {
+                pages.push(this.getImageSrc($('img', image)))
+            }
         }
 
         const chapterDetails = createChapterDetails({
@@ -312,7 +327,6 @@ export class BuddyComplexParser {
 
         const wpRegex = image?.match(/(https:\/\/i\d.wp.com\/)/)
         if (wpRegex) image = image.replace(wpRegex[0], '')
-
         if (image?.startsWith('//')) image = `https:${image}`
         if (!image?.startsWith('http')) image = `https://${image}`
 
