@@ -943,7 +943,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplexParser_1 = require("./BuddyComplexParser");
 const BuddyComplexHelper_1 = require("./BuddyComplexHelper");
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.0.1';
+const BASE_VERSION = '1.0.2';
 const getExportVersion = (EXTENSION_VERSION) => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.');
 };
@@ -1351,8 +1351,23 @@ class BuddyComplexParser {
     }
     parseChapterDetails($, mangaId, chapterId) {
         const pages = [];
-        for (const image of $('div.chapter-image', 'div#chapter-images.container').toArray()) {
-            pages.push(this.getImageSrc($('img', image)));
+        const imageRegex = $.html().match(/chapImages\s=\s(.+)(?=')/);
+        let imageScript = null;
+        if (imageRegex && imageRegex[1])
+            imageScript = imageRegex[1];
+        //If script has a match, use the script
+        if (imageScript) {
+            imageScript = imageScript.replace(/'/g, '');
+            const images = imageScript.split(',');
+            for (const image of images) {
+                pages.push(`https://static.youmadcdn.xyz/manga/${image}`);
+            }
+        }
+        else {
+            //Else parse the manual way
+            for (const image of $('div.chapter-image', 'div#chapter-images.container').toArray()) {
+                pages.push(this.getImageSrc($('img', image)));
+            }
         }
         const chapterDetails = createChapterDetails({
             id: chapterId,
