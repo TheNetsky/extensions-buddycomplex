@@ -82,7 +82,7 @@ export class BuddyComplexParser {
             if (!id) continue
 
             const getNumber = id.split('-').pop() ?? ''
-            const chapterNumberRegex = getNumber.match(/(\d+\.?\d?)/)
+            const chapterNumberRegex = getNumber.match(/(\d+\.?\d?)+/)
             let chapterNumber = 0
             if (chapterNumberRegex && chapterNumberRegex[1]) chapterNumber = Number(chapterNumberRegex[1])
 
