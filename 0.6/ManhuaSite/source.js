@@ -943,7 +943,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplexParser_1 = require("./BuddyComplexParser");
 const BuddyComplexHelper_1 = require("./BuddyComplexHelper");
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.0.2';
+const BASE_VERSION = '1.0.3';
 const getExportVersion = (EXTENSION_VERSION) => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.');
 };
@@ -1334,7 +1334,7 @@ class BuddyComplexParser {
             if (!id)
                 continue;
             const getNumber = (_e = id.split('-').pop()) !== null && _e !== void 0 ? _e : '';
-            const chapterNumberRegex = getNumber.match(/(\d+\.?\d?)/);
+            const chapterNumberRegex = getNumber.match(/(\d+\.?\d?)+/);
             let chapterNumber = 0;
             if (chapterNumberRegex && chapterNumberRegex[1])
                 chapterNumber = Number(chapterNumberRegex[1]);
