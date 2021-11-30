@@ -1,6 +1,6 @@
 {
   "name": "extensions-buddycomplex",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "repositoryName": "BuddyComplex Extensions (0.6)",
   "description": "BuddyComplex extensions for 0.6!",
   "main": "index.js",
