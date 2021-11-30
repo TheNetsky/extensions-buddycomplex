@@ -111,7 +111,7 @@ export class BuddyComplexParser {
 
             const images = imageScript.split(',')
             for (const image of images) {
-                pages.push(`https://static.youmadcdn.xyz/manga/${image}`)
+                pages.push(`https://s1.madcdnv2.xyz/file/img-mbuddy/manga/${image}`)
             }
         } else {
             //Else parse the manual way
