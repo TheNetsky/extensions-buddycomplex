@@ -78,7 +78,7 @@ export class BuddyComplexParser {
         for (const chapter of $('li', 'ul.chapter-list').toArray()) {
             const title = $('strong.chapter-title', chapter).text().trim()
             const id = $('a', chapter).attr('href')?.split('/').pop() ?? ''
-            const date = this.parseDate($('time.chapter-update', chapter)?.text() ?? '')
+            const date = new Date($('time.chapter-update', chapter)?.text() ?? '')
             if (!id) continue
 
             const getNumber = id.split('-').pop() ?? ''

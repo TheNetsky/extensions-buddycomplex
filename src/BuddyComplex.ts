@@ -23,7 +23,7 @@ import {
 import { URLBuilder } from './BuddyComplexHelper'
 
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.0.5'
+const BASE_VERSION = '1.1.0'
 export const getExportVersion = (EXTENSION_VERSION: string): string => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.')
 }
@@ -40,9 +40,9 @@ export abstract class BuddyComplex extends Source {
     abstract languageCode: LanguageCode
 
     /**
-     * Helps with CloudFlare for some sources, makes it worse for others; override with empty string if the latter is true
+     * Sets the to be used UserAgent for requests
      */
-    userAgentRandomizer = `Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/78.0${Math.floor(Math.random() * 100000)}`
+    userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Mobile/15E148 Safari/604.1'
 
     /**
      * Fallback image if no image is present
@@ -53,7 +53,7 @@ export abstract class BuddyComplex extends Source {
 
     //----REQUEST MANAGER----
     requestManager = createRequestManager({
-        requestsPerSecond: 3,
+        requestsPerSecond: 4,
         requestTimeout: 15000,
         interceptor: {
             interceptRequest: async (request: Request): Promise<Request> => {
@@ -61,8 +61,8 @@ export abstract class BuddyComplex extends Source {
                 request.headers = {
                     ...(request.headers ?? {}),
                     ...{
-                        'user-agent': this.userAgentRandomizer,
-                        'referer': this.baseUrl
+                        'user-agent': this.userAgent,
+                        'referer': `${this.baseUrl}/`
                     }
                 }
 
@@ -97,7 +97,7 @@ export abstract class BuddyComplex extends Source {
 
     override async getChapters(mangaId: string): Promise<Chapter[]> {
         const request = createRequestObject({
-            url: `${this.baseUrl}/${mangaId}/`,
+            url: `${this.baseUrl}/api/manga/${mangaId}/chapters?source=detail`,
             method: 'GET',
         })
 
@@ -165,7 +165,7 @@ export abstract class BuddyComplex extends Source {
         }
 
         const request = createRequestObject({
-            url: `${this.baseUrl}`,
+            url: `${this.baseUrl}/`,
             method: 'GET',
         })
 
@@ -245,6 +245,9 @@ export abstract class BuddyComplex extends Source {
         return createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
+            headers: {
+                'user-agent': this.userAgent
+            }
         })
     }
 
