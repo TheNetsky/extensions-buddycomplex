@@ -1553,20 +1553,20 @@ exports.BuddyComplexParser = BuddyComplexParser;
 },{"entities":8,"paperback-extensions-common":14}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ManhuaSite = exports.ManhuaSiteInfo = void 0;
+exports.MangaSaga = exports.MangaSagaInfo = void 0;
 /* eslint-disable linebreak-style */
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplex_1 = require("../BuddyComplex");
-const MANHUASITE_DOMAIN = 'https://manhuasite.com';
-exports.ManhuaSiteInfo = {
+const MANGASAGA_DOMAIN = 'https://mangasaga.com';
+exports.MangaSagaInfo = {
     version: (0, BuddyComplex_1.getExportVersion)('0.0.0'),
-    name: 'ManhuaSite',
-    description: 'Extension that pulls manga from ManhuaSite',
+    name: 'MangaSaga',
+    description: 'Extension that pulls manga from MangaSaga',
     author: 'Netsky',
     authorWebsite: 'http://github.com/TheNetsky',
     icon: 'icon.png',
     contentRating: paperback_extensions_common_1.ContentRating.MATURE,
-    websiteBaseURL: MANHUASITE_DOMAIN,
+    websiteBaseURL: MANGASAGA_DOMAIN,
     sourceTags: [
         {
             text: 'Notifications',
@@ -1574,14 +1574,14 @@ exports.ManhuaSiteInfo = {
         },
     ]
 };
-class ManhuaSite extends BuddyComplex_1.BuddyComplex {
+class MangaSaga extends BuddyComplex_1.BuddyComplex {
     constructor() {
         super(...arguments);
-        this.baseUrl = MANHUASITE_DOMAIN;
+        this.baseUrl = MANGASAGA_DOMAIN;
         this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
     }
 }
-exports.ManhuaSite = ManhuaSite;
+exports.MangaSaga = MangaSaga;
 
 },{"../BuddyComplex":57,"paperback-extensions-common":14}]},{},[60])(60)
 });

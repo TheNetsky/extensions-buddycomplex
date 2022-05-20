@@ -934,7 +934,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplex_1 = require("../BuddyComplex");
 const BOXMANHWA_DOMAIN = 'https://boxmanhwa.com';
 exports.BoxManhwaInfo = {
-    version: BuddyComplex_1.getExportVersion('0.0.0'),
+    version: (0, BuddyComplex_1.getExportVersion)('0.0.0'),
     name: 'BoxManhwa',
     description: 'Extension that pulls manga from BoxManhwa',
     author: 'Netsky',
@@ -976,7 +976,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplexParser_1 = require("./BuddyComplexParser");
 const BuddyComplexHelper_1 = require("./BuddyComplexHelper");
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.0.5';
+const BASE_VERSION = '1.1.0';
 const getExportVersion = (EXTENSION_VERSION) => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.');
 };
@@ -985,9 +985,9 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
     constructor() {
         super(...arguments);
         /**
-         * Helps with CloudFlare for some sources, makes it worse for others; override with empty string if the latter is true
+         * Sets the to be used UserAgent for requests
          */
-        this.userAgentRandomizer = `Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/78.0${Math.floor(Math.random() * 100000)}`;
+        this.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Mobile/15E148 Safari/604.1';
         /**
          * Fallback image if no image is present
          * Default = "https://i.imgur.com/GYUxEX8.png"
@@ -995,14 +995,14 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
         this.fallbackImage = 'https://i.imgur.com/GYUxEX8.png';
         //----REQUEST MANAGER----
         this.requestManager = createRequestManager({
-            requestsPerSecond: 3,
+            requestsPerSecond: 4,
             requestTimeout: 15000,
             interceptor: {
                 interceptRequest: (request) => __awaiter(this, void 0, void 0, function* () {
                     var _a;
                     request.headers = Object.assign(Object.assign({}, ((_a = request.headers) !== null && _a !== void 0 ? _a : {})), {
-                        'user-agent': this.userAgentRandomizer,
-                        'referer': this.baseUrl
+                        'user-agent': this.userAgent,
+                        'referer': `${this.baseUrl}/`
                     });
                     return request;
                 }),
@@ -1031,7 +1031,7 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
     getChapters(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
             const request = createRequestObject({
-                url: `${this.baseUrl}/${mangaId}/`,
+                url: `${this.baseUrl}/api/manga/${mangaId}/chapters?source=detail`,
                 method: 'GET',
             });
             const response = yield this.requestManager.schedule(request, 1);
@@ -1095,7 +1095,7 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
                 ids: [],
             };
             const request = createRequestObject({
-                url: `${this.baseUrl}`,
+                url: `${this.baseUrl}/`,
                 method: 'GET',
             });
             const response = yield this.requestManager.schedule(request, 1);
@@ -1169,6 +1169,9 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
         return createRequestObject({
             url: `${this.baseUrl}/`,
             method: 'GET',
+            headers: {
+                'user-agent': this.userAgent
+            }
         });
     }
     CloudFlareError(status) {
@@ -1363,7 +1366,7 @@ class BuddyComplexParser {
         for (const chapter of $('li', 'ul.chapter-list').toArray()) {
             const title = $('strong.chapter-title', chapter).text().trim();
             const id = (_b = (_a = $('a', chapter).attr('href')) === null || _a === void 0 ? void 0 : _a.split('/').pop()) !== null && _b !== void 0 ? _b : '';
-            const date = this.parseDate((_d = (_c = $('time.chapter-update', chapter)) === null || _c === void 0 ? void 0 : _c.text()) !== null && _d !== void 0 ? _d : '');
+            const date = new Date((_d = (_c = $('time.chapter-update', chapter)) === null || _c === void 0 ? void 0 : _c.text()) !== null && _d !== void 0 ? _d : '');
             if (!id)
                 continue;
             const getNumber = (_e = id.split('-').pop()) !== null && _e !== void 0 ? _e : '';
