@@ -72,6 +72,7 @@ export class BuddyComplexParser {
 
     parseChapterList($: CheerioSelector, mangaId: string, source: any): Chapter[] {
         const chapters: Chapter[] = []
+        let sortingIndex = 0
 
         const langCode = source.languageCode
 
@@ -93,7 +94,10 @@ export class BuddyComplexParser {
                 langCode: langCode,
                 chapNum: chapterNumber,
                 time: date,
+                // @ts-ignore
+                sortingIndex
             }))
+            sortingIndex--
         }
         return chapters
     }
@@ -104,7 +108,7 @@ export class BuddyComplexParser {
         const imageRegex = $.html().match(/chapImages\s=\s(.+)(?=')/)
         let imageScript = null
         if (imageRegex && imageRegex[1]) imageScript = imageRegex[1]
-        
+
         //If script has a match, use the script
         if (imageScript) {
             imageScript = imageScript.replace(/'/g, '')
