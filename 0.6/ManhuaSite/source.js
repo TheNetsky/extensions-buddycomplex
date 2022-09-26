@@ -927,15 +927,6 @@ __exportStar(require("./RawData"), exports);
 
 },{"./Chapter":15,"./ChapterDetails":16,"./Constants":17,"./DynamicUI":33,"./HomeSection":34,"./Languages":35,"./Manga":36,"./MangaTile":37,"./MangaUpdate":38,"./PagedResults":39,"./RawData":40,"./RequestHeaders":41,"./RequestInterceptor":42,"./RequestManager":43,"./RequestObject":44,"./ResponseObject":45,"./SearchField":46,"./SearchRequest":47,"./SourceInfo":48,"./SourceManga":49,"./SourceStateManager":50,"./SourceTag":51,"./TagSection":52,"./TrackedManga":53,"./TrackedMangaChapterReadAction":54,"./TrackerActionQueue":55}],57:[function(require,module,exports){
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BuddyComplex = exports.getExportVersion = void 0;
 /* eslint-disable linebreak-style */
@@ -965,17 +956,19 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
             requestsPerSecond: 4,
             requestTimeout: 15000,
             interceptor: {
-                interceptRequest: (request) => __awaiter(this, void 0, void 0, function* () {
-                    var _a;
-                    request.headers = Object.assign(Object.assign({}, ((_a = request.headers) !== null && _a !== void 0 ? _a : {})), {
-                        'user-agent': this.userAgent,
-                        'referer': `${this.baseUrl}/`
-                    });
+                interceptRequest: async (request) => {
+                    request.headers = {
+                        ...(request.headers ?? {}),
+                        ...{
+                            'user-agent': this.userAgent,
+                            'referer': `${this.baseUrl}/`
+                        }
+                    };
                     return request;
-                }),
-                interceptResponse: (response) => __awaiter(this, void 0, void 0, function* () {
+                },
+                interceptResponse: async (response) => {
                     return response;
-                })
+                }
             }
         });
         this.parser = new BuddyComplexParser_1.BuddyComplexParser();
@@ -983,153 +976,135 @@ class BuddyComplex extends paperback_extensions_common_1.Source {
     getMangaShareUrl(mangaId) {
         return `${this.baseUrl}/${mangaId}/`;
     }
-    getMangaDetails(mangaId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const request = createRequestObject({
-                url: `${this.baseUrl}/${mangaId}/`,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            this.CloudFlareError(response.status);
-            const $ = this.cheerio.load(response.data);
-            return this.parser.parseMangaDetails($, mangaId, this);
+    async getMangaDetails(mangaId) {
+        const request = createRequestObject({
+            url: `${this.baseUrl}/${mangaId}/`,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        return this.parser.parseMangaDetails($, mangaId, this);
+    }
+    async getChapters(mangaId) {
+        const request = createRequestObject({
+            url: `${this.baseUrl}/api/manga/${mangaId}/chapters?source=detail`,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        return this.parser.parseChapterList($, mangaId, this);
+    }
+    async getChapterDetails(mangaId, chapterId) {
+        const request = createRequestObject({
+            url: `${this.baseUrl}/${mangaId}/${chapterId}/`,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        return this.parser.parseChapterDetails($, mangaId, chapterId);
+    }
+    async getTags() {
+        const request = createRequestObject({
+            url: `${this.baseUrl}/`,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        return this.parser.parseTags($, this);
+    }
+    async getSearchResults(query, metadata) {
+        const page = metadata?.page ?? 1;
+        const url = new BuddyComplexHelper_1.URLBuilder(this.baseUrl)
+            .addPathComponent('search')
+            .addQueryParameter('page', page)
+            .addQueryParameter('q', encodeURI(query?.title || ''))
+            .addQueryParameter('genre', query.includedTags?.map((x) => x.id).join('%5B%5D'))
+            .buildUrl();
+        const request = createRequestObject({
+            url: url,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        const manga = this.parser.parseViewMore($, this);
+        metadata = !this.parser.isLastPage($) ? { page: page + 1 } : undefined;
+        return createPagedResults({
+            results: manga,
+            metadata
         });
     }
-    getChapters(mangaId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const request = createRequestObject({
-                url: `${this.baseUrl}/api/manga/${mangaId}/chapters?source=detail`,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            this.CloudFlareError(response.status);
-            const $ = this.cheerio.load(response.data);
-            return this.parser.parseChapterList($, mangaId, this);
+    async filterUpdatedManga(mangaUpdatesFoundCallback, time, ids) {
+        let updatedManga = {
+            ids: [],
+        };
+        const request = createRequestObject({
+            url: `${this.baseUrl}/`,
+            method: 'GET',
         });
+        const response = await this.requestManager.schedule(request, 1);
+        const $ = this.cheerio.load(response.data);
+        updatedManga = this.parser.parseUpdatedManga($, time, ids, this);
+        if (updatedManga.ids.length > 0) {
+            mangaUpdatesFoundCallback(createMangaUpdates({
+                ids: updatedManga.ids
+            }));
+        }
     }
-    getChapterDetails(mangaId, chapterId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const request = createRequestObject({
-                url: `${this.baseUrl}/${mangaId}/${chapterId}/`,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            this.CloudFlareError(response.status);
-            const $ = this.cheerio.load(response.data);
-            return this.parser.parseChapterDetails($, mangaId, chapterId);
+    async getHomePageSections(sectionCallback) {
+        const section1 = createHomeSection({ id: 'hot_updates', title: 'Hot Updates', view_more: true });
+        const section2 = createHomeSection({ id: 'latest_update', title: 'Latest Updates', view_more: true });
+        const section3 = createHomeSection({ id: 'top_today', title: 'Top Today', view_more: true });
+        const section4 = createHomeSection({ id: 'top_weekly', title: 'Top Weekly', view_more: true });
+        const section5 = createHomeSection({ id: 'top_monthly', title: 'Top Monthly', view_more: true });
+        const sections = [section1, section2, section3, section4, section5];
+        const request = createRequestObject({
+            url: `${this.baseUrl}/`,
+            method: 'GET',
         });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        this.parser.parseHomeSections($, sections, sectionCallback, this);
     }
-    getTags() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const request = createRequestObject({
-                url: `${this.baseUrl}/`,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            this.CloudFlareError(response.status);
-            const $ = this.cheerio.load(response.data);
-            return this.parser.parseTags($, this);
+    async getViewMoreItems(homepageSectionId, metadata) {
+        const page = metadata?.page ?? 1;
+        let param = '';
+        switch (homepageSectionId) {
+            case 'hot_updates':
+                param = 'popular';
+                break;
+            case 'latest_update':
+                param = 'latest';
+                break;
+            case 'top_today':
+                param = 'top/day';
+                break;
+            case 'top_weekly':
+                param = 'top/week';
+                break;
+            case 'top_monthly':
+                param = 'top/month';
+                break;
+            default:
+                throw new Error(`Invalid homeSectionId | ${homepageSectionId}`);
+        }
+        const request = createRequestObject({
+            url: `${this.baseUrl}/`,
+            method: 'GET',
+            param: `${param}?page=${page}`,
         });
-    }
-    getSearchResults(query, metadata) {
-        var _a, _b;
-        return __awaiter(this, void 0, void 0, function* () {
-            const page = (_a = metadata === null || metadata === void 0 ? void 0 : metadata.page) !== null && _a !== void 0 ? _a : 1;
-            const url = new BuddyComplexHelper_1.URLBuilder(this.baseUrl)
-                .addPathComponent('search')
-                .addQueryParameter('page', page)
-                .addQueryParameter('q', encodeURI((query === null || query === void 0 ? void 0 : query.title) || ''))
-                .addQueryParameter('genre', (_b = query.includedTags) === null || _b === void 0 ? void 0 : _b.map((x) => x.id).join('%5B%5D'))
-                .buildUrl();
-            const request = createRequestObject({
-                url: url,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            this.CloudFlareError(response.status);
-            const $ = this.cheerio.load(response.data);
-            const manga = this.parser.parseViewMore($, this);
-            metadata = !this.parser.isLastPage($) ? { page: page + 1 } : undefined;
-            return createPagedResults({
-                results: manga,
-                metadata
-            });
-        });
-    }
-    filterUpdatedManga(mangaUpdatesFoundCallback, time, ids) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let updatedManga = {
-                ids: [],
-            };
-            const request = createRequestObject({
-                url: `${this.baseUrl}/`,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            const $ = this.cheerio.load(response.data);
-            updatedManga = this.parser.parseUpdatedManga($, time, ids, this);
-            if (updatedManga.ids.length > 0) {
-                mangaUpdatesFoundCallback(createMangaUpdates({
-                    ids: updatedManga.ids
-                }));
-            }
-        });
-    }
-    getHomePageSections(sectionCallback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const section1 = createHomeSection({ id: 'hot_updates', title: 'Hot Updates', view_more: true });
-            const section2 = createHomeSection({ id: 'latest_update', title: 'Latest Updates', view_more: true });
-            const section3 = createHomeSection({ id: 'top_today', title: 'Top Today', view_more: true });
-            const section4 = createHomeSection({ id: 'top_weekly', title: 'Top Weekly', view_more: true });
-            const section5 = createHomeSection({ id: 'top_monthly', title: 'Top Monthly', view_more: true });
-            const sections = [section1, section2, section3, section4, section5];
-            const request = createRequestObject({
-                url: `${this.baseUrl}/`,
-                method: 'GET',
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            this.CloudFlareError(response.status);
-            const $ = this.cheerio.load(response.data);
-            this.parser.parseHomeSections($, sections, sectionCallback, this);
-        });
-    }
-    getViewMoreItems(homepageSectionId, metadata) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            const page = (_a = metadata === null || metadata === void 0 ? void 0 : metadata.page) !== null && _a !== void 0 ? _a : 1;
-            let param = '';
-            switch (homepageSectionId) {
-                case 'hot_updates':
-                    param = 'popular';
-                    break;
-                case 'latest_update':
-                    param = 'latest';
-                    break;
-                case 'top_today':
-                    param = 'top/day';
-                    break;
-                case 'top_weekly':
-                    param = 'top/week';
-                    break;
-                case 'top_monthly':
-                    param = 'top/month';
-                    break;
-                default:
-                    throw new Error(`Invalid homeSectionId | ${homepageSectionId}`);
-            }
-            const request = createRequestObject({
-                url: `${this.baseUrl}/`,
-                method: 'GET',
-                param: `${param}?page=${page}`,
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            const $ = this.cheerio.load(response.data);
-            const manga = this.parser.parseViewMore($, this);
-            metadata = !this.parser.isLastPage($) ? { page: page + 1 } : undefined;
-            return createPagedResults({
-                results: manga,
-                metadata
-            });
+        const response = await this.requestManager.schedule(request, 1);
+        const $ = this.cheerio.load(response.data);
+        const manga = this.parser.parseViewMore($, this);
+        metadata = !this.parser.isLastPage($) ? { page: page + 1 } : undefined;
+        return createPagedResults({
+            results: manga,
+            metadata
         });
     }
     getCloudflareBypassRequest() {
@@ -1204,11 +1179,10 @@ const entities = require("entities");
 class BuddyComplexParser {
     constructor() {
         this.parseViewMore = ($, source) => {
-            var _a, _b;
             const mangas = [];
             const collectedIds = [];
             for (const manga of $('div.book-item', 'div.list').toArray()) {
-                const id = (_b = (_a = $('a', manga).attr('href')) === null || _a === void 0 ? void 0 : _a.replace('/', '')) !== null && _b !== void 0 ? _b : '';
+                const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
                 const title = $('div.title', manga).text().trim();
                 const image = this.getImageSrc($('img', manga));
                 const subtitle = $('span.latest-chapter', manga).text().trim();
@@ -1240,10 +1214,9 @@ class BuddyComplexParser {
             return isLast;
         };
         this.parseDate = (date) => {
-            var _a;
             date = date.toUpperCase();
             let time;
-            const number = Number(((_a = /\d*/.exec(date)) !== null && _a !== void 0 ? _a : [])[0]);
+            const number = Number((/\d*/.exec(date) ?? [])[0]);
             if (date.includes('LESS THAN AN HOUR') || date.includes('JUST NOW')) {
                 time = new Date(Date.now());
             }
@@ -1278,7 +1251,6 @@ class BuddyComplexParser {
         };
     }
     parseMangaDetails($, mangaId, source) {
-        var _a, _b, _c;
         const titles = [];
         titles.push(this.decodeHTMLEntity($('div.name.box > h1').text().trim()));
         const altTitles = $('div.name.box > h2').text().split(/, |; |\| |\/ /);
@@ -1289,14 +1261,14 @@ class BuddyComplexParser {
         }
         const authors = [];
         for (const authorRaw of $('p:contains(Authors) > a', 'div.detail').toArray()) {
-            authors.push((_a = $(authorRaw).attr('title')) === null || _a === void 0 ? void 0 : _a.trim());
+            authors.push($(authorRaw).attr('title')?.trim());
         }
         const image = this.getImageSrc($('img', 'div.img-cover'));
         const description = this.decodeHTMLEntity($('div.section-body > p.content').text().trim());
         const arrayTags = [];
         for (const tag of $('p:contains(Genres) > a', 'div.detail').toArray()) {
             const label = $(tag).text().replace(',', '').trim();
-            const id = encodeURI((_c = (_b = $(tag).attr('href')) === null || _b === void 0 ? void 0 : _b.replace('genres/', '').replace(/\//g, '')) !== null && _c !== void 0 ? _c : '');
+            const id = encodeURI($(tag).attr('href')?.replace('genres/', '').replace(/\//g, '') ?? '');
             if (!id || !label)
                 continue;
             arrayTags.push({ id: id, label: label });
@@ -1327,17 +1299,16 @@ class BuddyComplexParser {
         });
     }
     parseChapterList($, mangaId, source) {
-        var _a, _b, _c, _d, _e;
         const chapters = [];
         let sortingIndex = 0;
         const langCode = source.languageCode;
         for (const chapter of $('li', 'ul.chapter-list').toArray()) {
             const title = $('strong.chapter-title', chapter).text().trim();
-            const id = (_b = (_a = $('a', chapter).attr('href')) === null || _a === void 0 ? void 0 : _a.split('/').pop()) !== null && _b !== void 0 ? _b : '';
-            const date = new Date((_d = (_c = $('time.chapter-update', chapter)) === null || _c === void 0 ? void 0 : _c.text()) !== null && _d !== void 0 ? _d : '');
+            const id = $('a', chapter).attr('href')?.split('/').pop() ?? '';
+            const date = new Date($('time.chapter-update', chapter)?.text() ?? '');
             if (!id)
                 continue;
-            const getNumber = (_e = id.split('-').pop()) !== null && _e !== void 0 ? _e : '';
+            const getNumber = id.split('-').pop() ?? '';
             const chapterNumberRegex = getNumber.match(/(\d+\.?\d?)+/);
             let chapterNumber = 0;
             if (chapterNumberRegex && chapterNumberRegex[1])
@@ -1385,11 +1356,10 @@ class BuddyComplexParser {
         return chapterDetails;
     }
     parseTags($, source) {
-        var _a, _b;
         const arrayTags = [];
         for (const tag of $('li', $('a:contains(GENRES)', 'ul.header__links-list').next()).toArray()) {
             const label = $(tag).text().replace(',', '').trim();
-            const id = encodeURI((_b = (_a = $('a', tag).attr('href')) === null || _a === void 0 ? void 0 : _a.replace('genres/', '').replace(/\//g, '')) !== null && _b !== void 0 ? _b : '');
+            const id = encodeURI($('a', tag).attr('href')?.replace('genres/', '').replace(/\//g, '') ?? '');
             if (!id || !label)
                 continue;
             arrayTags.push({ id: id, label: label });
@@ -1398,10 +1368,9 @@ class BuddyComplexParser {
         return tagSections;
     }
     parseUpdatedManga($, time, ids, source) {
-        var _a, _b;
         const updatedManga = [];
         for (const manga of $('div.book-item.latest-item', 'div.section.box.grid-items').toArray()) {
-            const id = (_b = (_a = $('a', manga).attr('href')) === null || _a === void 0 ? void 0 : _a.replace('/', '')) !== null && _b !== void 0 ? _b : '';
+            const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
             const mangaDate = this.parseDate($('span', $('div.updated-date', manga).first()).text().trim());
             //Check if manga time is older than the time porvided, is this manga has an update. Return this.
             if (!id)
@@ -1417,13 +1386,12 @@ class BuddyComplexParser {
         };
     }
     parseHomeSections($, sections, sectionCallback, source) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         for (const section of sections) {
             //Hot Updates
             if (section.id == 'hot_updates') {
                 const HotUpdates = [];
                 for (const manga of $('div.trending-item', 'div.main-carousel').toArray()) {
-                    const id = (_b = (_a = $('a', manga).attr('href')) === null || _a === void 0 ? void 0 : _a.replace('/', '')) !== null && _b !== void 0 ? _b : '';
+                    const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
                     const title = $('a', manga).attr('title');
                     const image = this.getImageSrc($('img', manga));
                     const subtitle = $('span.latest-chapter', manga).text().trim();
@@ -1443,7 +1411,7 @@ class BuddyComplexParser {
             if (section.id == 'latest_update') {
                 const latestUpdate = [];
                 for (const manga of $('div.book-item.latest-item', 'div.section.box.grid-items').toArray()) {
-                    const id = (_d = (_c = $('a', manga).attr('href')) === null || _c === void 0 ? void 0 : _c.replace('/', '')) !== null && _d !== void 0 ? _d : '';
+                    const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
                     const title = $('div.title > h3 > a', manga).text().trim();
                     const image = this.getImageSrc($('img', manga));
                     const subtitle = $('a', $('div.chap-item', manga).first()).text().trim();
@@ -1463,7 +1431,7 @@ class BuddyComplexParser {
             if (section.id == 'top_today') {
                 const TopTodayManga = [];
                 for (const manga of $('div.top-item', $('div.tab-panel')[0]).toArray()) {
-                    const id = (_f = (_e = $('a', manga).attr('href')) === null || _e === void 0 ? void 0 : _e.replace('/', '')) !== null && _f !== void 0 ? _f : '';
+                    const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
                     const title = $('h3.title', manga).text().trim();
                     const image = this.getImageSrc($('img', manga));
                     const subtitle = $('h4.chap-item', manga).text().trim();
@@ -1483,7 +1451,7 @@ class BuddyComplexParser {
             if (section.id == 'top_weekly') {
                 const TopWeeklyManga = [];
                 for (const manga of $('div.top-item', $('div.tab-panel')[1]).toArray()) {
-                    const id = (_h = (_g = $('a', manga).attr('href')) === null || _g === void 0 ? void 0 : _g.replace('/', '')) !== null && _h !== void 0 ? _h : '';
+                    const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
                     const title = $('h3.title', manga).text().trim();
                     const image = this.getImageSrc($('img', manga));
                     const subtitle = $('h4.chap-item', manga).text().trim();
@@ -1503,7 +1471,7 @@ class BuddyComplexParser {
             if (section.id == 'top_monthly') {
                 const TopMonthlyManga = [];
                 for (const manga of $('div.top-item', $('div.tab-panel')[2]).toArray()) {
-                    const id = (_k = (_j = $('a', manga).attr('href')) === null || _j === void 0 ? void 0 : _j.replace('/', '')) !== null && _k !== void 0 ? _k : '';
+                    const id = $('a', manga).attr('href')?.replace('/', '') ?? '';
                     const title = $('h3.title', manga).text().trim();
                     const image = this.getImageSrc($('img', manga));
                     const subtitle = $('h4.chap-item', manga).text().trim();
@@ -1522,31 +1490,30 @@ class BuddyComplexParser {
         }
     }
     getImageSrc(imageObj) {
-        var _a, _b, _c;
         let image;
-        const dataLazy = imageObj === null || imageObj === void 0 ? void 0 : imageObj.attr('data-lazy-src');
-        const srcset = imageObj === null || imageObj === void 0 ? void 0 : imageObj.attr('srcset');
-        const dataSRC = imageObj === null || imageObj === void 0 ? void 0 : imageObj.attr('data-src');
-        if ((typeof dataLazy != 'undefined') && !(dataLazy === null || dataLazy === void 0 ? void 0 : dataLazy.startsWith('data'))) {
-            image = imageObj === null || imageObj === void 0 ? void 0 : imageObj.attr('data-lazy-src');
+        const dataLazy = imageObj?.attr('data-lazy-src');
+        const srcset = imageObj?.attr('srcset');
+        const dataSRC = imageObj?.attr('data-src');
+        if ((typeof dataLazy != 'undefined') && !dataLazy?.startsWith('data')) {
+            image = imageObj?.attr('data-lazy-src');
         }
-        else if ((typeof srcset != 'undefined') && !(srcset === null || srcset === void 0 ? void 0 : srcset.startsWith('data'))) {
-            image = (_b = (_a = imageObj === null || imageObj === void 0 ? void 0 : imageObj.attr('srcset')) === null || _a === void 0 ? void 0 : _a.split(' ')[0]) !== null && _b !== void 0 ? _b : '';
+        else if ((typeof srcset != 'undefined') && !srcset?.startsWith('data')) {
+            image = imageObj?.attr('srcset')?.split(' ')[0] ?? '';
         }
-        else if ((typeof dataSRC != 'undefined') && !(dataSRC === null || dataSRC === void 0 ? void 0 : dataSRC.startsWith('data'))) {
-            image = imageObj === null || imageObj === void 0 ? void 0 : imageObj.attr('data-src');
+        else if ((typeof dataSRC != 'undefined') && !dataSRC?.startsWith('data')) {
+            image = imageObj?.attr('data-src');
         }
         else {
             image = null;
         }
-        const wpRegex = image === null || image === void 0 ? void 0 : image.match(/(https:\/\/i\d.wp.com\/)/);
+        const wpRegex = image?.match(/(https:\/\/i\d.wp.com\/)/);
         if (wpRegex)
             image = image.replace(wpRegex[0], '');
-        if (image === null || image === void 0 ? void 0 : image.startsWith('//'))
+        if (image?.startsWith('//'))
             image = `https:${image}`;
-        if (!(image === null || image === void 0 ? void 0 : image.startsWith('http')))
+        if (!image?.startsWith('http'))
             image = `https://${image}`;
-        return encodeURI(decodeURI(this.decodeHTMLEntity((_c = image === null || image === void 0 ? void 0 : image.trim()) !== null && _c !== void 0 ? _c : '')));
+        return encodeURI(decodeURI(this.decodeHTMLEntity(image?.trim() ?? '')));
     }
     decodeHTMLEntity(str) {
         return entities.decodeHTML(str);
