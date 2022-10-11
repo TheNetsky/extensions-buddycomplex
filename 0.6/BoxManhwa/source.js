@@ -967,7 +967,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplexParser_1 = require("./BuddyComplexParser");
 const BuddyComplexHelper_1 = require("./BuddyComplexHelper");
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.1.1';
+const BASE_VERSION = '1.1.2';
 const getExportVersion = (EXTENSION_VERSION) => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.');
 };
@@ -1346,7 +1346,7 @@ class BuddyComplexParser {
             let chapterNumber = 0;
             if (chapterNumberRegex && chapterNumberRegex[1])
                 chapterNumber = Number(chapterNumberRegex[1]);
-            chapters.push(createChapter({
+            chapters.push({
                 id: id,
                 mangaId,
                 name: title,
@@ -1355,10 +1355,14 @@ class BuddyComplexParser {
                 time: date,
                 // @ts-ignore
                 sortingIndex
-            }));
+            });
             sortingIndex--;
         }
-        return chapters;
+        return chapters.map(chapter => {
+            // @ts-ignore
+            chapter.sortingIndex += chapters.length;
+            return createChapter(chapter);
+        });
     }
     parseChapterDetails($, mangaId, chapterId) {
         const pages = [];
