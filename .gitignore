@@ -120,3 +120,4 @@ docs
 
 # mac stuff
 .DS_Store
+package-lock.json
