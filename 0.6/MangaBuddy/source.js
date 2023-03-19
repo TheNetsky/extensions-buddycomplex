@@ -934,7 +934,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BuddyComplexParser_1 = require("./BuddyComplexParser");
 const BuddyComplexHelper_1 = require("./BuddyComplexHelper");
 // Set the version for the base, changing this version will change the versions of all sources
-const BASE_VERSION = '1.1.2';
+const BASE_VERSION = '1.1.3';
 const getExportVersion = (EXTENSION_VERSION) => {
     return BASE_VERSION.split('.').map((x, index) => Number(x) + Number(EXTENSION_VERSION.split('.')[index])).join('.');
 };
@@ -1342,7 +1342,7 @@ class BuddyComplexParser {
             imageScript = imageScript.replace(/'/g, '');
             const images = imageScript.split(',');
             for (const image of images) {
-                pages.push(`https://static.youmadcdn.xyz/manga/${image}`);
+                pages.push(image);
             }
         }
         else {
@@ -1554,6 +1554,22 @@ class MangaBuddy extends BuddyComplex_1.BuddyComplex {
         super(...arguments);
         this.baseUrl = MANGABUDDY_DOMAIN;
         this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
+    }
+    async getHomePageSections(sectionCallback) {
+        const section1 = createHomeSection({ id: 'hot_updates', title: 'Hot Updates', view_more: true });
+        const section2 = createHomeSection({ id: 'latest_update', title: 'Latest Updates', view_more: true });
+        const section3 = createHomeSection({ id: 'top_today', title: 'Top Today', view_more: true });
+        const section4 = createHomeSection({ id: 'top_weekly', title: 'Top Weekly', view_more: true });
+        const section5 = createHomeSection({ id: 'top_monthly', title: 'Top Monthly', view_more: true });
+        const sections = [section1, section2, section3, section4, section5];
+        const request = createRequestObject({
+            url: `${this.baseUrl}/home`,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const $ = this.cheerio.load(response.data);
+        this.parser.parseHomeSections($, sections, sectionCallback, this);
     }
 }
 exports.MangaBuddy = MangaBuddy;
