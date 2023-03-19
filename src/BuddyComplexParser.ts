@@ -120,7 +120,7 @@ export class BuddyComplexParser {
 
             const images = imageScript.split(',')
             for (const image of images) {
-                pages.push(`https://static.youmadcdn.xyz/manga/${image}`)
+                pages.push(image)
             }
         } else {
             //Else parse the manual way
