@@ -120,7 +120,11 @@ export class BuddyComplexParser {
 
             const images = imageScript.split(',')
             for (const image of images) {
-                pages.push(image)
+                let img = image
+                if (!img.startsWith('https')) {
+                    img = 'https://s1.mbbcdnv1.xyz/manga/' + image
+                }
+                pages.push(img)
             }
         } else {
             //Else parse the manual way
